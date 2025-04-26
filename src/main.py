@@ -15,7 +15,7 @@ MAX_SPEED = 6
 BOOST_MULTIPLIER = 2
 SLOWDOWN_MULTIPLIER = 0.5
 OFF_TRACK_PENALTY = 0.5
-ROTATION_SPEED = 3  # Degrees per frame when turning
+ROTATION_SPEED = 3
 
 def main():
     # Initialize Pygame
@@ -26,22 +26,29 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
-    # Create car
+    # Car state
     car_x = SCREEN_WIDTH // 2
     car_y = SCREEN_HEIGHT // 2
     car_speed = 0
-    car_angle = 0  # Angle in degrees
-
-    # Lap system
+    car_angle = 0
     laps = 0
     crossed_finish_line = False
     off_track = False
+    crashed = False
 
     font = pygame.font.SysFont(None, 36)
 
     # Car image
     car_surface = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
     pygame.draw.polygon(car_surface, (255, 0, 0), [(0, 0), (CAR_WIDTH, CAR_HEIGHT//2), (0, CAR_HEIGHT)])
+
+    def reset_car():
+        nonlocal car_x, car_y, car_speed, car_angle, crashed
+        car_x = SCREEN_WIDTH // 2
+        car_y = SCREEN_HEIGHT // 2
+        car_speed = 0
+        car_angle = 0
+        crashed = False
 
     while running:
         for event in pygame.event.get():
@@ -50,73 +57,78 @@ def main():
 
         keys = pygame.key.get_pressed()
 
-        # Steering
-        if keys[pygame.K_LEFT]:
-            car_angle += ROTATION_SPEED
-        if keys[pygame.K_RIGHT]:
-            car_angle -= ROTATION_SPEED
+        if not crashed:
+            # Steering
+            if keys[pygame.K_LEFT]:
+                car_angle += ROTATION_SPEED
+            if keys[pygame.K_RIGHT]:
+                car_angle -= ROTATION_SPEED
 
-        # Acceleration
-        if keys[pygame.K_UP]:
-            car_speed += ACCELERATION
-        if keys[pygame.K_DOWN]:
-            car_speed -= ACCELERATION
+            # Acceleration
+            if keys[pygame.K_UP]:
+                car_speed += ACCELERATION
+            if keys[pygame.K_DOWN]:
+                car_speed -= ACCELERATION
 
-        # Apply friction
-        if car_speed > 0:
-            car_speed -= FRICTION
-            if car_speed < 0:
-                car_speed = 0
-        elif car_speed < 0:
-            car_speed += FRICTION
+            # Apply friction
             if car_speed > 0:
-                car_speed = 0
+                car_speed -= FRICTION
+                if car_speed < 0:
+                    car_speed = 0
+            elif car_speed < 0:
+                car_speed += FRICTION
+                if car_speed > 0:
+                    car_speed = 0
 
-        # Limit speed
-        car_speed = max(-MAX_SPEED, min(MAX_SPEED, car_speed))
+            # Limit speed
+            car_speed = max(-MAX_SPEED, min(MAX_SPEED, car_speed))
 
-        # Update car position based on angle
-        rad_angle = math.radians(car_angle)
-        car_x += car_speed * math.cos(rad_angle)
-        car_y -= car_speed * math.sin(rad_angle)  # Pygame's y-axis goes downward!
+            # Update car position
+            rad_angle = math.radians(car_angle)
+            car_x += car_speed * math.cos(rad_angle)
+            car_y -= car_speed * math.sin(rad_angle)
 
-        # Create car rectangle
-        car_rect = pygame.Rect(car_x - CAR_WIDTH//2, car_y - CAR_HEIGHT//2, CAR_WIDTH, CAR_HEIGHT)
+            # Car rectangle
+            car_rect = pygame.Rect(car_x - CAR_WIDTH//2, car_y - CAR_HEIGHT//2, CAR_WIDTH, CAR_HEIGHT)
 
-        # Off-track detection
-        if not is_on_track(car_rect):
-            car_speed *= OFF_TRACK_PENALTY
-            off_track = True
-        else:
-            off_track = False
+            # Detect crash
+            if not is_on_track(car_rect):
+                crashed = True
 
-        # Speed Boost detection
-        if check_boost(car_rect):
-            car_speed *= BOOST_MULTIPLIER
+            # Detect boosts/slowdowns
+            if not crashed:
+                if check_boost(car_rect):
+                    car_speed *= BOOST_MULTIPLIER
+                if check_slowdown(car_rect):
+                    car_speed *= SLOWDOWN_MULTIPLIER
 
-        # Slowdown detection
-        if check_slowdown(car_rect):
-            car_speed *= SLOWDOWN_MULTIPLIER
-
-        # Lap detection
-        if car_rect.colliderect(FINISH_LINE_RECT) and not off_track:
-            if not crossed_finish_line:
-                laps += 1
-                crossed_finish_line = True
-        else:
-            crossed_finish_line = False
+            # Lap detection
+            if not crashed:
+                if car_rect.colliderect(FINISH_LINE_RECT):
+                    if not crossed_finish_line:
+                        laps += 1
+                        crossed_finish_line = True
+                else:
+                    crossed_finish_line = False
 
         # Render
         draw_track(screen)
 
-        # Rotate and draw car
         rotated_car = pygame.transform.rotate(car_surface, car_angle)
         rect = rotated_car.get_rect(center=(car_x, car_y))
         screen.blit(rotated_car, rect.topleft)
 
-        # Draw lap count
+        # Draw lap counter
         lap_text = font.render(f"Laps: {laps}", True, (255, 255, 255))
         screen.blit(lap_text, (10, 10))
+
+        # Crash message
+        if crashed:
+            crash_text = font.render("CRASHED! Press R to reset.", True, (255, 0, 0))
+            screen.blit(crash_text, (SCREEN_WIDTH//2 - crash_text.get_width()//2, SCREEN_HEIGHT//2))
+
+            if keys[pygame.K_r]:
+                reset_car()
 
         pygame.display.flip()
         clock.tick(FPS)
