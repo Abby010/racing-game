@@ -1,5 +1,6 @@
 import pygame
 import sys
+from track import draw_track
 
 # Constants
 SCREEN_WIDTH = 800
@@ -71,7 +72,7 @@ def main():
         car_y += car_vel_y
 
         # Render
-        screen.fill((0, 0, 0))  # Black background
+        draw_track(screen)
 
         car_rect = pygame.Rect(car_x, car_y, CAR_WIDTH, CAR_HEIGHT)
         pygame.draw.rect(screen, (255, 0, 0), car_rect)
