@@ -1,6 +1,6 @@
 import pygame
 import sys
-from track import draw_track, FINISH_LINE_RECT, is_on_track
+from track import draw_track, FINISH_LINE_RECT, is_on_track, check_boost
 
 # Constants
 SCREEN_WIDTH = 800
@@ -11,7 +11,8 @@ CAR_HEIGHT = 60
 ACCELERATION = 0.5
 FRICTION = 0.05
 MAX_SPEED = 8
-OFF_TRACK_PENALTY = 0.5  # How much to slow down off-track
+BOOST_MULTIPLIER = 2  # Boost increases speed by this factor
+OFF_TRACK_PENALTY = 0.5
 
 def main():
     # Initialize Pygame
@@ -84,14 +85,18 @@ def main():
 
         # Off-track detection
         if not is_on_track(car_rect):
-            # Slow down the car if off track
             car_vel_x *= OFF_TRACK_PENALTY
             car_vel_y *= OFF_TRACK_PENALTY
             off_track = True
         else:
             off_track = False
 
-        # Lap detection (only if fully on track and crossed finish line properly)
+        # Speed Boost detection
+        if check_boost(car_rect):
+            car_vel_x *= BOOST_MULTIPLIER
+            car_vel_y *= BOOST_MULTIPLIER
+
+        # Lap detection
         if car_rect.colliderect(FINISH_LINE_RECT) and not off_track:
             if not crossed_finish_line:
                 laps += 1
