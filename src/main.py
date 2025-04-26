@@ -1,6 +1,6 @@
 import pygame
 import sys
-from track import draw_track, FINISH_LINE_RECT
+from track import draw_track, FINISH_LINE_RECT, is_on_track
 
 # Constants
 SCREEN_WIDTH = 800
@@ -11,6 +11,7 @@ CAR_HEIGHT = 60
 ACCELERATION = 0.5
 FRICTION = 0.05
 MAX_SPEED = 8
+OFF_TRACK_PENALTY = 0.5  # How much to slow down off-track
 
 def main():
     # Initialize Pygame
@@ -30,6 +31,7 @@ def main():
     # Lap system
     laps = 0
     crossed_finish_line = False
+    off_track = False
 
     font = pygame.font.SysFont(None, 36)
 
@@ -77,11 +79,20 @@ def main():
         car_x += car_vel_x
         car_y += car_vel_y
 
-        # Create car rectangle for collision
+        # Create car rectangle
         car_rect = pygame.Rect(car_x, car_y, CAR_WIDTH, CAR_HEIGHT)
 
-        # Lap detection
-        if car_rect.colliderect(FINISH_LINE_RECT):
+        # Off-track detection
+        if not is_on_track(car_rect):
+            # Slow down the car if off track
+            car_vel_x *= OFF_TRACK_PENALTY
+            car_vel_y *= OFF_TRACK_PENALTY
+            off_track = True
+        else:
+            off_track = False
+
+        # Lap detection (only if fully on track and crossed finish line properly)
+        if car_rect.colliderect(FINISH_LINE_RECT) and not off_track:
             if not crossed_finish_line:
                 laps += 1
                 crossed_finish_line = True
