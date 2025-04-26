@@ -6,6 +6,8 @@ GRASS_COLOR = (0, 150, 0)     # Green for grass
 FINISH_LINE_COLOR = (255, 255, 255)  # White for finish line
 BOOST_COLOR = (0, 255, 255)    # Cyan for boost tiles
 SLOWDOWN_COLOR = (139, 69, 19)  # Brown for mud tiles
+TREE_COLOR = (34, 139, 34)      # Forest green for trees
+BANNER_COLOR = (255, 215, 0)    # Gold for banners
 
 # Define track segments as a list of rectangles
 TRACK_SEGMENTS = [
@@ -30,10 +32,28 @@ SLOWDOWN_TILES = [
     pygame.Rect(450, 200, 80, 40),
 ]
 
+# Decorations
+TREES = [
+    (100, 100), (700, 100), (100, 500), (700, 500),
+    (400, 50), (400, 550),
+]
+BANNERS = [
+    (250, 80), (500, 80),
+    (250, 520), (500, 520),
+]
+
 def draw_track(screen):
-    """Draws the track, finish line, boost tiles, and slowdown tiles."""
+    """Draws the track, decorations, finish line, boost tiles, and slowdown tiles."""
     # Fill background with grass
     screen.fill(GRASS_COLOR)
+
+    # Draw trees
+    for (x, y) in TREES:
+        pygame.draw.circle(screen, TREE_COLOR, (x, y), 20)
+
+    # Draw banners
+    for (x, y) in BANNERS:
+        pygame.draw.rect(screen, BANNER_COLOR, (x-20, y-10, 40, 20))
 
     # Draw each track segment
     for segment in TRACK_SEGMENTS:
