@@ -1,6 +1,6 @@
 import pygame
 import sys
-from track import draw_track
+from track import draw_track, FINISH_LINE_RECT
 
 # Constants
 SCREEN_WIDTH = 800
@@ -26,6 +26,12 @@ def main():
     car_y = SCREEN_HEIGHT // 2 - CAR_HEIGHT // 2
     car_vel_x = 0
     car_vel_y = 0
+
+    # Lap system
+    laps = 0
+    crossed_finish_line = False
+
+    font = pygame.font.SysFont(None, 36)
 
     while running:
         # Handle events
@@ -71,11 +77,25 @@ def main():
         car_x += car_vel_x
         car_y += car_vel_y
 
+        # Create car rectangle for collision
+        car_rect = pygame.Rect(car_x, car_y, CAR_WIDTH, CAR_HEIGHT)
+
+        # Lap detection
+        if car_rect.colliderect(FINISH_LINE_RECT):
+            if not crossed_finish_line:
+                laps += 1
+                crossed_finish_line = True
+        else:
+            crossed_finish_line = False
+
         # Render
         draw_track(screen)
 
-        car_rect = pygame.Rect(car_x, car_y, CAR_WIDTH, CAR_HEIGHT)
         pygame.draw.rect(screen, (255, 0, 0), car_rect)
+
+        # Draw lap count
+        lap_text = font.render(f"Laps: {laps}", True, (255, 255, 255))
+        screen.blit(lap_text, (10, 10))
 
         pygame.display.flip()
 
