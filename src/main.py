@@ -7,7 +7,9 @@ SCREEN_HEIGHT = 600
 FPS = 60
 CAR_WIDTH = 40
 CAR_HEIGHT = 60
-CAR_SPEED = 5
+ACCELERATION = 0.5
+FRICTION = 0.05
+MAX_SPEED = 8
 
 def main():
     # Initialize Pygame
@@ -21,6 +23,8 @@ def main():
     # Create car
     car_x = SCREEN_WIDTH // 2 - CAR_WIDTH // 2
     car_y = SCREEN_HEIGHT // 2 - CAR_HEIGHT // 2
+    car_vel_x = 0
+    car_vel_y = 0
 
     while running:
         # Handle events
@@ -31,20 +35,44 @@ def main():
         # Handle key presses
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
-            car_x -= CAR_SPEED
+            car_vel_x -= ACCELERATION
         if keys[pygame.K_RIGHT]:
-            car_x += CAR_SPEED
+            car_vel_x += ACCELERATION
         if keys[pygame.K_UP]:
-            car_y -= CAR_SPEED
+            car_vel_y -= ACCELERATION
         if keys[pygame.K_DOWN]:
-            car_y += CAR_SPEED
+            car_vel_y += ACCELERATION
 
-        # Update game state (empty for now)
+        # Apply friction
+        if car_vel_x > 0:
+            car_vel_x -= FRICTION
+            if car_vel_x < 0:
+                car_vel_x = 0
+        elif car_vel_x < 0:
+            car_vel_x += FRICTION
+            if car_vel_x > 0:
+                car_vel_x = 0
 
-        # Render (draw everything)
+        if car_vel_y > 0:
+            car_vel_y -= FRICTION
+            if car_vel_y < 0:
+                car_vel_y = 0
+        elif car_vel_y < 0:
+            car_vel_y += FRICTION
+            if car_vel_y > 0:
+                car_vel_y = 0
+
+        # Limit speed
+        car_vel_x = max(-MAX_SPEED, min(MAX_SPEED, car_vel_x))
+        car_vel_y = max(-MAX_SPEED, min(MAX_SPEED, car_vel_y))
+
+        # Update car position
+        car_x += car_vel_x
+        car_y += car_vel_y
+
+        # Render
         screen.fill((0, 0, 0))  # Black background
 
-        # Draw the car (as a rectangle)
         car_rect = pygame.Rect(car_x, car_y, CAR_WIDTH, CAR_HEIGHT)
         pygame.draw.rect(screen, (255, 0, 0), car_rect)
 
