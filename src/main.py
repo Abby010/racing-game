@@ -92,11 +92,11 @@ def main():
 
             # Friction
             if car_speed > 0:
-                car_speed -= FRiCTION
+                car_speed -= FRICTION
                 if car_speed < 0:
                     car_speed = 0
             elif car_speed < 0:
-                car_speed += FRiCTION
+                car_speed += FRICTION
                 if car_speed > 0:
                     car_speed = 0
 
@@ -133,6 +133,12 @@ def main():
         # Drawing
         screen.fill((0, 0, 0))
         draw_track(screen)
+
+        # Shadow under car
+        shadow_surface = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow_surface, (0, 0, 0, 100), shadow_surface.get_rect())
+        shadow_rect = shadow_surface.get_rect(center=(car_x, car_y + 10))
+        screen.blit(shadow_surface, shadow_rect)
 
         rotated_car = pygame.transform.rotate(car_surface, car_angle)
         rect = rotated_car.get_rect(center=(car_x, car_y))
@@ -172,4 +178,14 @@ def main():
             laps_text = font.render(f"Laps: {laps}", True, (255, 255, 255))
 
             screen.blit(finished_text, (SCREEN_WIDTH//2 - finished_text.get_width()//2, 150))
-            screen.blit(time_text, (SCREEN_WIDTH
+            screen.blit(time_text, (SCREEN_WIDTH//2 - time_text.get_width()//2, 300))
+            screen.blit(laps_text, (SCREEN_WIDTH//2 - laps_text.get_width()//2, 350))
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    pygame.quit()
+    sys.exit()
+
+if __name__ == "__main__":
+    main()
