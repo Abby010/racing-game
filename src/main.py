@@ -1,6 +1,7 @@
 import pygame
 import sys
 import math
+import time
 from track import draw_track, FINISH_LINE_RECT, is_on_track, check_boost, check_slowdown
 
 # Constants
@@ -35,8 +36,10 @@ def main():
     crossed_finish_line = False
     off_track = False
     crashed = False
+    countdown_start = time.time()
 
     font = pygame.font.SysFont(None, 36)
+    big_font = pygame.font.SysFont(None, 96)
 
     # Car image
     car_surface = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
@@ -57,7 +60,12 @@ def main():
 
         keys = pygame.key.get_pressed()
 
-        if not crashed:
+        current_time = time.time()
+        countdown_elapsed = current_time - countdown_start
+
+        race_started = countdown_elapsed > 4  # After "GO!" shown
+
+        if not crashed and race_started:
             # Steering
             if keys[pygame.K_LEFT]:
                 car_angle += ROTATION_SPEED
@@ -96,20 +104,18 @@ def main():
                 crashed = True
 
             # Detect boosts/slowdowns
-            if not crashed:
-                if check_boost(car_rect):
-                    car_speed *= BOOST_MULTIPLIER
-                if check_slowdown(car_rect):
-                    car_speed *= SLOWDOWN_MULTIPLIER
+            if check_boost(car_rect):
+                car_speed *= BOOST_MULTIPLIER
+            if check_slowdown(car_rect):
+                car_speed *= SLOWDOWN_MULTIPLIER
 
             # Lap detection
-            if not crashed:
-                if car_rect.colliderect(FINISH_LINE_RECT):
-                    if not crossed_finish_line:
-                        laps += 1
-                        crossed_finish_line = True
-                else:
-                    crossed_finish_line = False
+            if car_rect.colliderect(FINISH_LINE_RECT):
+                if not crossed_finish_line:
+                    laps += 1
+                    crossed_finish_line = True
+            else:
+                crossed_finish_line = False
 
         # Render
         draw_track(screen)
@@ -121,6 +127,20 @@ def main():
         # Draw lap counter
         lap_text = font.render(f"Laps: {laps}", True, (255, 255, 255))
         screen.blit(lap_text, (10, 10))
+
+        # Countdown
+        if not race_started:
+            if countdown_elapsed < 1:
+                countdown_text = "3"
+            elif countdown_elapsed < 2:
+                countdown_text = "2"
+            elif countdown_elapsed < 3:
+                countdown_text = "1"
+            else:
+                countdown_text = "GO!"
+
+            countdown_render = big_font.render(countdown_text, True, (255, 255, 0))
+            screen.blit(countdown_render, (SCREEN_WIDTH//2 - countdown_render.get_width()//2, SCREEN_HEIGHT//2 - countdown_render.get_height()//2))
 
         # Crash message
         if crashed:
