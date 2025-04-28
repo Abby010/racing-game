@@ -1,13 +1,15 @@
 import pygame
+import time
 
 # Constants for colors
 TRACK_COLOR = (50, 50, 50)    # Dark gray for track
 GRASS_COLOR = (0, 150, 0)     # Green for grass
 FINISH_LINE_COLOR = (255, 255, 255)  # White for finish line
-BOOST_COLOR = (0, 255, 255)    # Cyan for boost tiles
-SLOWDOWN_COLOR = (139, 69, 19)  # Brown for mud tiles
-TREE_COLOR = (34, 139, 34)      # Forest green for trees
-BANNER_COLOR = (255, 215, 0)    # Gold for banners
+BOOST_COLOR_BRIGHT = (0, 255, 255)   # Bright cyan
+BOOST_COLOR_DIM = (0, 200, 255)      # Dim cyan
+SLOWDOWN_COLOR = (139, 69, 19)       # Brown for mud tiles
+TREE_COLOR = (34, 139, 34)           # Forest green for trees
+BANNER_COLOR = (255, 215, 0)         # Gold for banners
 
 # Define track segments as a list of rectangles
 TRACK_SEGMENTS = [
@@ -62,9 +64,10 @@ def draw_track(screen):
     # Draw the finish line
     pygame.draw.rect(screen, FINISH_LINE_COLOR, FINISH_LINE_RECT)
 
-    # Draw boost tiles
+    # Blinking boost tiles
+    blink_color = BOOST_COLOR_BRIGHT if int(time.time() * 2) % 2 == 0 else BOOST_COLOR_DIM
     for boost_tile in BOOST_TILES:
-        pygame.draw.rect(screen, BOOST_COLOR, boost_tile)
+        pygame.draw.rect(screen, blink_color, boost_tile)
 
     # Draw slowdown tiles
     for slow_tile in SLOWDOWN_TILES:
