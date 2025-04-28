@@ -30,8 +30,17 @@ def main():
     font = pygame.font.SysFont(None, 36)
     big_font = pygame.font.SysFont(None, 96)
 
+    # Create improved racecar shape
     car_surface = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
-    pygame.draw.polygon(car_surface, (255, 0, 0), [(0, 0), (CAR_WIDTH, CAR_HEIGHT//2), (0, CAR_HEIGHT)])
+    car_shape = [
+        (CAR_WIDTH // 2, 0),               # Front tip
+        (CAR_WIDTH, CAR_HEIGHT // 4),       # Front right corner
+        (CAR_WIDTH * 3//4, CAR_HEIGHT),     # Rear right
+        (CAR_WIDTH // 4, CAR_HEIGHT),       # Rear left
+        (0, CAR_HEIGHT // 4)                # Front left corner
+    ]
+    pygame.draw.polygon(car_surface, (255, 0, 0), car_shape)
+    pygame.draw.rect(car_surface, (0, 0, 0), (CAR_WIDTH//4, CAR_HEIGHT//2, CAR_WIDTH//2, CAR_HEIGHT//4))  # Black cockpit window
 
     def reset_game():
         nonlocal car_x, car_y, car_speed, car_angle
@@ -83,11 +92,11 @@ def main():
 
             # Friction
             if car_speed > 0:
-                car_speed -= FRICTION
+                car_speed -= FRiCTION
                 if car_speed < 0:
                     car_speed = 0
             elif car_speed < 0:
-                car_speed += FRICTION
+                car_speed += FRiCTION
                 if car_speed > 0:
                     car_speed = 0
 
@@ -100,11 +109,11 @@ def main():
 
             car_rect = pygame.Rect(car_x - CAR_WIDTH//2, car_y - CAR_HEIGHT//2, CAR_WIDTH, CAR_HEIGHT)
 
-            # Only crash detect after race started
+            # Crash detection (only after countdown)
             if not is_on_track(car_rect):
                 crashed = True
 
-            # Boost/slowdown
+            # Boost / slowdown
             if check_boost(car_rect):
                 car_speed *= BOOST_MULTIPLIER
             if check_slowdown(car_rect):
@@ -121,6 +130,7 @@ def main():
             else:
                 crossed_finish_line = False
 
+        # Drawing
         screen.fill((0, 0, 0))
         draw_track(screen)
 
@@ -162,14 +172,4 @@ def main():
             laps_text = font.render(f"Laps: {laps}", True, (255, 255, 255))
 
             screen.blit(finished_text, (SCREEN_WIDTH//2 - finished_text.get_width()//2, 150))
-            screen.blit(time_text, (SCREEN_WIDTH//2 - time_text.get_width()//2, 300))
-            screen.blit(laps_text, (SCREEN_WIDTH//2 - laps_text.get_width()//2, 350))
-
-        pygame.display.flip()
-        clock.tick(FPS)
-
-    pygame.quit()
-    sys.exit()
-
-if __name__ == "__main__":
-    main()
+            screen.blit(time_text, (SCREEN_WIDTH
