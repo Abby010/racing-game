@@ -17,9 +17,9 @@ BOOST_MULTIPLIER = 2
 SLOWDOWN_MULTIPLIER = 0.5
 OFF_TRACK_PENALTY = 0.5
 ROTATION_SPEED = 3
+TOTAL_LAPS = 3  # Target number of laps
 
 def main():
-    # Initialize Pygame
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("2D Racing Game 🏎️")
@@ -27,31 +27,32 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
-    # Car state
-    car_x = SCREEN_WIDTH // 2
-    car_y = SCREEN_HEIGHT // 2
-    car_speed = 0
-    car_angle = 0
-    laps = 0
-    crossed_finish_line = False
-    off_track = False
-    crashed = False
-    countdown_start = time.time()
-
     font = pygame.font.SysFont(None, 36)
     big_font = pygame.font.SysFont(None, 96)
 
-    # Car image
     car_surface = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
     pygame.draw.polygon(car_surface, (255, 0, 0), [(0, 0), (CAR_WIDTH, CAR_HEIGHT//2), (0, CAR_HEIGHT)])
 
-    def reset_car():
-        nonlocal car_x, car_y, car_speed, car_angle, crashed
+    def reset_game():
+        nonlocal car_x, car_y, car_speed, car_angle
+        nonlocal laps, crossed_finish_line
+        nonlocal crashed, countdown_start, race_start_time, race_end_time, race_finished
+
         car_x = SCREEN_WIDTH // 2
         car_y = SCREEN_HEIGHT // 2
         car_speed = 0
         car_angle = 0
+
+        laps = 0
+        crossed_finish_line = False
         crashed = False
+        countdown_start = time.time()
+        race_start_time = None
+        race_end_time = None
+        race_finished = False
+
+    # Initialize game state
+    reset_game()
 
     while running:
         for event in pygame.event.get():
@@ -62,10 +63,12 @@ def main():
 
         current_time = time.time()
         countdown_elapsed = current_time - countdown_start
+        race_started = countdown_elapsed > 4  # After GO!
 
-        race_started = countdown_elapsed > 4  # After "GO!" shown
+        if race_started and race_start_time is None:
+            race_start_time = current_time
 
-        if not crashed and race_started:
+        if not crashed and not race_finished and race_started:
             # Steering
             if keys[pygame.K_LEFT]:
                 car_angle += ROTATION_SPEED
@@ -78,7 +81,7 @@ def main():
             if keys[pygame.K_DOWN]:
                 car_speed -= ACCELERATION
 
-            # Apply friction
+            # Friction
             if car_speed > 0:
                 car_speed -= FRICTION
                 if car_speed < 0:
@@ -88,45 +91,46 @@ def main():
                 if car_speed > 0:
                     car_speed = 0
 
-            # Limit speed
             car_speed = max(-MAX_SPEED, min(MAX_SPEED, car_speed))
 
-            # Update car position
+            # Update position
             rad_angle = math.radians(car_angle)
             car_x += car_speed * math.cos(rad_angle)
             car_y -= car_speed * math.sin(rad_angle)
 
-            # Car rectangle
             car_rect = pygame.Rect(car_x - CAR_WIDTH//2, car_y - CAR_HEIGHT//2, CAR_WIDTH, CAR_HEIGHT)
 
-            # Detect crash
+            # Only crash detect after race started
             if not is_on_track(car_rect):
                 crashed = True
 
-            # Detect boosts/slowdowns
+            # Boost/slowdown
             if check_boost(car_rect):
                 car_speed *= BOOST_MULTIPLIER
             if check_slowdown(car_rect):
                 car_speed *= SLOWDOWN_MULTIPLIER
 
-            # Lap detection
+            # Lap counting
             if car_rect.colliderect(FINISH_LINE_RECT):
                 if not crossed_finish_line:
                     laps += 1
                     crossed_finish_line = True
+                    if laps >= TOTAL_LAPS:
+                        race_end_time = time.time()
+                        race_finished = True
             else:
                 crossed_finish_line = False
 
-        # Render
+        screen.fill((0, 0, 0))
         draw_track(screen)
 
         rotated_car = pygame.transform.rotate(car_surface, car_angle)
         rect = rotated_car.get_rect(center=(car_x, car_y))
         screen.blit(rotated_car, rect.topleft)
 
-        # Draw lap counter
-        lap_text = font.render(f"Laps: {laps}", True, (255, 255, 255))
-        screen.blit(lap_text, (10, 10))
+        if race_started and not race_finished:
+            lap_text = font.render(f"Laps: {laps}/{TOTAL_LAPS}", True, (255, 255, 255))
+            screen.blit(lap_text, (10, 10))
 
         # Countdown
         if not race_started:
@@ -148,7 +152,18 @@ def main():
             screen.blit(crash_text, (SCREEN_WIDTH//2 - crash_text.get_width()//2, SCREEN_HEIGHT//2))
 
             if keys[pygame.K_r]:
-                reset_car()
+                reset_game()
+
+        # Finish screen
+        if race_finished:
+            total_time = race_end_time - race_start_time
+            finished_text = big_font.render("FINISHED!", True, (0, 255, 0))
+            time_text = font.render(f"Time: {total_time:.2f} seconds", True, (255, 255, 255))
+            laps_text = font.render(f"Laps: {laps}", True, (255, 255, 255))
+
+            screen.blit(finished_text, (SCREEN_WIDTH//2 - finished_text.get_width()//2, 150))
+            screen.blit(time_text, (SCREEN_WIDTH//2 - time_text.get_width()//2, 300))
+            screen.blit(laps_text, (SCREEN_WIDTH//2 - laps_text.get_width()//2, 350))
 
         pygame.display.flip()
         clock.tick(FPS)
